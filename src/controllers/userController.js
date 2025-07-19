@@ -13,14 +13,14 @@ const signup = async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10)
-        const res = await userModel.create({
+        const result = await userModel.create({
             email: email,
             password: hashedPassword,
             username: username
         })
 
-        const token = jwt.sign({email: res.email, id: res._id}, SECRET_KEY)
-        res.status(201).json({user: res, token: token})
+        const token = jwt.sign({email: result.email, id: result._id}, SECRET_KEY)
+        res.status(201).json({user: result, token: token})
     }
     catch(error) {
         console.log(error)
@@ -34,7 +34,7 @@ const signin = async (req, res) => {
     const {email, password} = req.body
     try {
         const existingUser = await userModel.findOne({email: email})
-        if(!existingUSer) {
+        if(!existingUser) {
             return res.status(404).json({message: "User not found"})
         }
 
@@ -48,7 +48,7 @@ const signin = async (req, res) => {
     }
     catch(error) {
         console.log(error)
-        res.status(500).json({message: "Something went wrong")}
+        res.status(500).json({message: "Something went wrong"})
     }
 }
 
