@@ -3,24 +3,29 @@ const userRouter = require("./routes/userRoutes")
 const noteRouter = require("./routes/noteRoutes")
 const mongoose = require('mongoose');
 const app = express()
+const dotenv = require("dotenv")
+const cors = require("cors")
 
-const uri = "mongodb+srv://ddubey11:D_dubey11@cluster0.4lpi075.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+dotenv.config()
 
 app.use(express.json())
+app.use(cors())
 
 
 app.use("/users", userRouter)
 app.use("/notes", noteRouter)
 
 app.get("/", (req, res)=> {
-    res.send("Hello")
+    res.send("Notes API")
 })
 
 
-mongoose.connect(uri).then(()=> {
+const PORT = process.env.PORT || 3000
 
-    app.listen(3000, ()=> {
-        console.log("Server started on port 3000")
+mongoose.connect(process.env.MONGO_URL).then(()=> {
+
+    app.listen(PORT, ()=> {
+        console.log("Server started on port " + PORT)
     })
 })
 .catch((error) => {
