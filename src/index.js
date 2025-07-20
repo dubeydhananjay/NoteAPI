@@ -1,36 +1,46 @@
-const express = require("express");
-const cors = require("cors");
-require("dotenv").config();
+// index.js
+require("dotenv").config();          // ① load env first
+const express    = require("express");
+const cors       = require("cors");
+const mongoose   = require("mongoose");
+const serverless = require("serverless-http");
+
 const userRouter = require("./routes/userRoutes");
 const noteRouter = require("./routes/noteRoutes");
-const mongoose = require("mongoose");
-const app = express();
 
+const app = express();
 app.use(express.json());
 app.use(cors());
 
 app.use("/users", userRouter);
 app.use("/notes", noteRouter);
+app.get("/", (_, res) => res.send("Notes API"));
 
-app.get("/", (req, res) => {
-    res.send("Notes API");
-});
+// --- Mongo connect only once ---
+let dbPromise;
+async function ensureDb() {
+  if (!dbPromise) {
+    dbPromise = mongoose.connect(process.env.MONGO_URL);
+  }
+  return dbPromise;
+}
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGO_URL)
+// --- Local‑only listener ---
+if (process.env.NODE_ENV !== "production") {
+  // for `node index.js` or `npm start`
+  ensureDb()
     .then(() => {
-        console.log("Connected to MongoDB");
-        // Only listen locally if not in Vercel environment
-        if (process.env.NODE_ENV !== "production") {
-            const PORT = process.env.PORT || 3000;
-            app.listen(PORT, () => {
-                console.log("Server started on port " + PORT);
-            });
-        }
+      const PORT = process.env.PORT || 3000;
+      app.listen(PORT, () =>
+        console.log(`🚀 Listening locally on http://localhost:${PORT}`)
+      );
     })
-    .catch((error) => {
-        console.log(error);
-    });
+    .catch(console.error);
+}
 
-// Export the app for Vercel
-module.exports = app;
+// --- Export the handler for Vercel ---
+const handler = serverless(app);
+module.exports = async (req, res) => {
+  await ensureDb();
+  return handler(req, res);
+};
